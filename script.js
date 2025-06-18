@@ -131,7 +131,7 @@ function showStatus(message, isSuccess) {
       statusEl.innerText = "";
       statusEl.classList.remove("success", "error");
     }, 1000);
-  }, 1500);
+  }, 5000);
 }
 
 /**
