@@ -14,6 +14,28 @@ const members = {
   "1234": { name: "Test",   clockedIn: false, clockInTime: null, hourlyRate: 15.65 }
 };
 
+
+function showLoginSplash(name) {
+  // Check for and remove any old splash first (just in case)
+  const oldSplash = document.querySelector(".login-splash");
+  if (oldSplash) oldSplash.remove();
+
+  // Create the new splash
+  const splash = document.createElement("div");
+  splash.className = "login-splash";
+  splash.textContent = `Welcome, ${name}`;
+  document.body.appendChild(splash);
+
+  // Give it a moment to actually render visually before starting the timer
+  setTimeout(() => {
+    splash.style.opacity = "1";
+  }, 50); // small delay to trigger CSS transition (optional)
+
+  // Now delay the redirect
+  setTimeout(() => {
+    window.location.href = "schedule.html";
+  }, 3000); // 3 seconds
+}
 // Global variable to hold the current keypad callback.
 let keypadCallback = null;
 
@@ -264,6 +286,31 @@ function createCurvedTitle() {
     lettersGroup.appendChild(letterElem);
   }
 }
+
+document.getElementById("open-schedule").addEventListener("click", function (e) {
+  e.preventDefault();
+
+  openKeypad((passkey) => {
+    const operatorCode = "2019"; // your master schedule editor password
+
+    if (passkey === operatorCode) {
+  localStorage.setItem("userRole", "operator");
+  localStorage.setItem("userName", "Operator");
+  showLoginSplash("Operator");
+} else if (members[passkey]) {
+  const member = members[passkey];
+  localStorage.setItem("userRole", "employee");
+  localStorage.setItem("userName", member.name);
+  showLoginSplash(member.name);
+} else {
+  showStatus("❌ Invalid passkey.", false);
+}
+
+  });
+});
+
+
+
 
 // =======================
 // INITIALIZATION ON PAGE LOAD

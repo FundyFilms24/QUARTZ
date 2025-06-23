@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Schedule | QUARTZ</title>
+  <!-- Required CSS for the built-in popups (if needed) -->
+  <link rel="stylesheet" href="https://uicdn.toast.com/tui.date-picker/latest/tui-date-picker.css" />
+  <link rel="stylesheet" href="https://uicdn.toast.com/tui.time-picker/latest/tui-time-picker.css" />
+  
+  <!-- TUI Calendar CSS -->
+  <link rel="stylesheet" href="https://uicdn.toast.com/calendar/latest/toastui-calendar.min.css">
+  
+  <!-- Custom styles -->
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Montserrat', sans-serif;
+      background: #eeeeee;
+    }
+    /* Calendar container styling */
+    #calendar {
+      height: 90vh;
+      max-width: 1000px;
+      margin: 20px auto;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      padding: 10px;
+      opacity: 0;
+      transition: opacity 0.5s ease-in;
+    }
+    #calendar.loaded {
+      opacity: 1;
+    }
+    /* View-switch and action buttons for operators */
+    #view-buttons {
+      text-align: center;
+      margin: 10px;
+      display: none; /* Hidden by default; shown only for operators */
+    }
+    #view-buttons button {
+      padding: 0.5rem 1rem;
+      margin: 0 0.5rem;
+      font-size: 1rem;
+      border-radius: 50px;
+      border: none;
+      color: #fff;
+      background-color: #787e73;
+      cursor: pointer;
+    }
+    @media (max-width: 600px) {
+      #calendar {
+        width: 95%;
+        height: 80vh;
+      }
+      #view-buttons button {
+        font-size: 0.9rem;
+        padding: 0.4rem 0.8rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Action buttons for operators -->
+  <div id="view-buttons">
+    <button onclick="window.calendar && window.calendar.changeView('month', true)">Month</button>
+    <button onclick="window.calendar && window.calendar.changeView('week', true)">Week</button>
+    <button onclick="window.calendar && window.calendar.changeView('day', true)">Day</button>
+    <button id="add-event-btn" onclick="addEvent()">Add Event</button>
+    <button id="edit-button" onclick="editEvent()">Edit</button>
+  </div>
+  
+  <!-- Calendar container -->
+  <div id="calendar"></div>
+  
+  <!-- TUI Calendar JS -->
+  <script src="https://uicdn.toast.com/calendar/latest/toastui-calendar.min.js"></script>
+  
+  <!-- Your schedule JS -->
+  <script src="schedule.js"></script>
+</body>
+</html>

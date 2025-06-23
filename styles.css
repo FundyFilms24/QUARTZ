@@ -250,3 +250,41 @@ html {
   -ms-overflow-style: none;  /* IE and Edge */
   scrollbar-width: none;     /* Firefox */
 }
+
+/* Schedule Styles: */
+
+
+
+
+.login-splash {
+  animation: splashFade 0.3s ease-in;
+}
+
+@keyframes splashFade {
+  from {
+    transform: translate(-50%, -60%);
+    opacity: 0;
+  }
+  to {
+    transform: translate(-50%, -50%);
+    opacity: 1;
+  }
+}
+
+.login-splash {
+  position: fixed;
+  top: 30%; /* Raise it higher */
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: #03cf11;
+  color: white;
+  font-weight: bold;
+  font-size: 2rem; /* Make it bigger */
+  padding: 20px 40px;
+  border-radius: 12px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: 9999;
+  text-align: center;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+}
