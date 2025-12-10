@@ -1,67 +1,19 @@
 // =======================
-// CONFIGURATION & GLOBALS
+// CONFIG & GLOBALS
 // =======================
 
-// EmailJS configuration – use the values you provided.
-const EMAILJS_USER_ID = "FEvFj-wpLQ1td00DK";       // Your public user ID from EmailJS.
-const EMAILJS_SERVICE_ID = "service_m86sfll";         // Your EmailJS service ID.
-const EMAILJS_TEMPLATE_ID = "template_7e83ufc";       // Your EmailJS template ID.
+const EMAILJS_USER_ID     = "FEvFj-wpLQ1td00DK";
+const EMAILJS_SERVICE_ID  = "service_m86sfll";
+const EMAILJS_TEMPLATE_ID = "template_7e83ufc";
 
-// Define your members – every member’s hourly rate is now 15.65.
 const members = {
-  "0524": { name: "Gerald", clockedIn: false, clockInTime: null, hourlyRate: 15.65 },
-  "1125": { name: "Emily",  clockedIn: false, clockInTime: null, hourlyRate: 15.65 },
-  "1234": { name: "Test",   clockedIn: false, clockInTime: null, hourlyRate: 15.65 }
+  "0524": { name:"Gerald", clockedIn:false, clockInTime:null, hourlyRate:15.65 },
+  "1125": { name:"Emily", clockedIn:false, clockInTime:null, hourlyRate:15.65 },
+  "1234": { name:"Test",  clockedIn:false, clockInTime:null, hourlyRate:15.65 }
 };
 
-
-function showLoginSplash(name) {
-  // Check for and remove any old splash first (just in case)
-  const oldSplash = document.querySelector(".login-splash");
-  if (oldSplash) oldSplash.remove();
-
-  // Create the new splash
-  const splash = document.createElement("div");
-  splash.className = "login-splash";
-  splash.textContent = `Welcome, ${name}`;
-  document.body.appendChild(splash);
-
-  // Give it a moment to actually render visually before starting the timer
-  setTimeout(() => {
-    splash.style.opacity = "1";
-  }, 50); // small delay to trigger CSS transition (optional)
-
-  // Now delay the redirect
-  setTimeout(() => {
-    window.location.href = "schedule.html";
-  }, 3000); // 3 seconds
-}
-// Global variable to hold the current keypad callback.
-let keypadCallback = null;
-
 // =======================
-// DATE FORMATTING FUNCTION
-// =======================
-
-/**
- * Formats a Date object into a readable string.
- * For example: "Wednesday, June 18, 2025, 12:20 PM"
- */
-function formatDate(date) {
-  const options = {
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-    hour12: true
-  };
-  return date.toLocaleString("en-US", options);
-}
-
-// =======================
-// PERSISTENCE FUNCTIONS (localStorage)
+// STORAGE HELPERS
 // =======================
 
 function updateLocalStorage() {
@@ -70,255 +22,239 @@ function updateLocalStorage() {
 
 function loadLocalStorage() {
   const stored = localStorage.getItem("membersData");
-  if (stored) {
-    const storedMembers = JSON.parse(stored);
-    for (let key in storedMembers) {
-      if (storedMembers[key].clockInTime) {
-        storedMembers[key].clockInTime = new Date(storedMembers[key].clockInTime);
-      }
-      // Check if hourlyRate is missing; if so, set the default.
-      if (storedMembers[key].hourlyRate === undefined) {
-        storedMembers[key].hourlyRate = 15.65;
-      }
+  if (!stored) return;
+  const data = JSON.parse(stored);
+  for (let k in data) {
+    if (data[k].clockInTime) {
+      data[k].clockInTime = new Date(data[k].clockInTime);
     }
-    Object.assign(members, storedMembers);
+    if (data[k].hourlyRate === undefined) {
+      data[k].hourlyRate = 15.65;
+    }
   }
+  Object.assign(members, data);
 }
 
+// =======================
+// DATE + STATUS
+// =======================
+
+function formatDate(date) {
+  return date.toLocaleString("en-US", {
+    weekday:"long", year:"numeric", month:"long",
+    day:"numeric", hour:"numeric", minute:"2-digit",
+    hour12:true
+  });
+}
+
+function showStatus(msg, isSuccess) {
+  const el = document.getElementById("status");
+  el.textContent = msg;
+  el.classList.toggle("success", isSuccess);
+  el.classList.toggle("error", !isSuccess);
+  el.style.opacity = "1";
+  setTimeout(() => el.style.opacity = "0", 5_000);
+}
 
 // =======================
-// KEYPAD FUNCTIONS
+// EMAIL
 // =======================
 
-function openKeypad(callback) {
-  keypadCallback = callback;
-  const keypadContainer = document.getElementById("keypad-container");
-  keypadContainer.style.display = "flex";
-  keypadContainer.style.opacity = "1";
-  // Clear any previous input.
+function sendEmailUsingEmailJS(name, start, end, secs, rate, earned) {
+  const params = {
+    member_name: name,
+    start_time:   start,
+    end_time:     end,
+    worked_time:  secs + " seconds",
+    hourly_rate:  rate,
+    total_earned: "$" + earned
+  };
+  emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, params)
+    .then(r => console.log("Email sent", r))
+    .catch(e => console.error("EmailJS error", e));
+}
+
+// =======================
+// KEYPAD
+// =======================
+
+let keypadCallback = null;
+
+function openKeypad(cb) {
+  keypadCallback = cb;
+  const container = document.getElementById("keypad-container");
+  container.style.display = "flex";
+  container.style.opacity = "1";
   document.getElementById("keypad-display").innerText = "";
 }
 
 function closeKeypad() {
-  const keypadContainer = document.getElementById("keypad-container");
-  if (keypadContainer) {
-    // Immediately hide the keypad without delay or fade.
-    keypadContainer.style.opacity = "0";
-    keypadContainer.style.display = "none";
-  }
+  const c = document.getElementById("keypad-container");
+  c.style.opacity = "0";
+  setTimeout(() => c.style.display = "none", 300);
   keypadCallback = null;
 }
 
-
 function setupKeypad() {
-  const keypadButtons = document.querySelectorAll(".keypad-btn");
-  keypadButtons.forEach(button => {
-    button.addEventListener("click", function (e) {
+  document.querySelectorAll(".keypad-btn").forEach(btn => {
+    btn.addEventListener("click", e => {
       e.preventDefault();
-      const value = this.dataset.value;
-      const display = document.getElementById("keypad-display");
-      if (value === "delete") {
-        display.innerText = display.innerText.slice(0, -1);
-      } else if (value === "clear") {
-        display.innerText = "";
-      } else {
-        display.innerText += value;
-      }
+      const v = btn.dataset.value;
+      const d = document.getElementById("keypad-display");
+      if (v === "delete") d.innerText = d.innerText.slice(0,-1);
+      else if (v === "clear") d.innerText = "";
+      else d.innerText += v;
     });
   });
+  document.getElementById("keypad-submit")
+    .addEventListener("click", e => {
+      e.preventDefault();
+      const pass = document.getElementById("keypad-display").innerText;
+      if (keypadCallback) keypadCallback(pass);
+      closeKeypad();
+    });
+}
 
-  document.getElementById("keypad-submit").addEventListener("click", function (e) {
-    e.preventDefault();
-    const passkey = document.getElementById("keypad-display").innerText;
-    if (keypadCallback) {
-      keypadCallback(passkey);
+// =======================
+// LOGIN SPLASH + AUTH
+// =======================
+
+function showLoginSplash(name, target = "schedule.html") {
+  document.querySelectorAll(".login-splash").forEach(el => el.remove());
+  const s = document.createElement("div");
+  s.className = "login-splash";
+  s.textContent = `Welcome, ${name}!`;
+  document.body.appendChild(s);
+  requestAnimationFrame(() => s.style.opacity = "1");
+  setTimeout(() => window.location.href = target, 3000);
+}
+
+function authenticate(page) {
+  openKeypad(pass => {
+    const opCode = "2019";
+    if (pass === opCode) {
+      localStorage.setItem("userRole","operator");
+      localStorage.setItem("userName","Operator");
+      showLoginSplash("Operator", page + ".html");
     }
-    closeKeypad();
+    else if (members[pass]) {
+      const m = members[pass];
+      localStorage.setItem("userRole","employee");
+      localStorage.setItem("userName", m.name);
+      showLoginSplash(m.name, page + ".html");
+    }
+    else {
+      showStatus("❌ Invalid passkey.", false);
+    }
   });
 }
 
 // =======================
-// STATUS & EMAIL FUNCTIONS
-// =======================
-
-function showStatus(message, isSuccess) {
-  const statusEl = document.getElementById("status");
-  statusEl.style.opacity = "1";
-  statusEl.innerText = message;
-  statusEl.classList.remove("success", "error");
-  statusEl.classList.add(isSuccess ? "success" : "error");
-  setTimeout(() => {
-    statusEl.style.opacity = "0";
-    setTimeout(() => {
-      statusEl.innerText = "";
-      statusEl.classList.remove("success", "error");
-    }, 1000);
-  }, 5000);
-}
-
-/**
- * Sends an email using EmailJS upon clock-out.
- * The email includes the member's name, start time, end time, worked time,
- * hourly rate, and total earned.
- */
-function sendEmailUsingEmailJS(name, startTime, endTime, workedSeconds, hourlyRate, totalEarned) {
-  const templateParams = {
-    member_name: name,
-    start_time: startTime,
-    end_time: endTime,
-    worked_time: workedSeconds + " seconds",
-    hourly_rate: hourlyRate,
-    total_earned: "$" + totalEarned
-  };
-
-  emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams)
-    .then(function(response) {
-      console.log("SUCCESS!", response.status, response.text);
-    }, function(error) {
-      console.error("FAILED...", error);
-    });
-}
-
-// =======================
-// CLOCK IN/OUT FUNCTION
+// CLOCK IN/OUT
 // =======================
 
 function clockInOut() {
-  openKeypad(function(passkey) {
-    if (members.hasOwnProperty(passkey)) {
-      let member = members[passkey];
-      const currentTime = new Date();
-      const formattedTime = formatDate(currentTime);
-      if (!member.clockedIn) {
-        // Clock-In: record the clock-in time.
-        member.clockedIn = true;
-        member.clockInTime = currentTime;
-        showStatus(`${member.name} Clocked In at ${formattedTime}`, true);
-        // No email is sent on clock-in.
-      } else {
-        // Clock-Out: calculate worked seconds and earnings.
-        member.clockedIn = false;
-        if (!member.clockInTime) {
-          showStatus("Error: missing clock-in time.", false);
-          return;
-        }
-        const workedSeconds = Math.round((currentTime - member.clockInTime) / 1000);
-        const startTimeFormatted = formatDate(member.clockInTime);
-        const workedHours = workedSeconds / 3600;
-        const totalEarned = workedHours * member.hourlyRate;
-        const totalEarnedRounded = Math.round(totalEarned * 100) / 100;
-        member.clockInTime = null;
-        showStatus(
-          `${member.name} Clocked Out at ${formattedTime}. Worked: ${workedSeconds} seconds, Earned: $${totalEarnedRounded}`,
-          true
-        );
-        // Send email notification using EmailJS.
-        sendEmailUsingEmailJS(
-          member.name,
-          startTimeFormatted,
-          formattedTime,
-          workedSeconds,
-          member.hourlyRate,
-          totalEarnedRounded
-        );
-      }
-      updateLocalStorage();
-    } else {
+  openKeypad(pass => {
+    if (!members[pass]) {
       showStatus("Invalid passkey", false);
+      return;
     }
+    const m = members[pass];
+    const now = new Date();
+    const fmt = formatDate(now);
+    if (!m.clockedIn) {
+      m.clockedIn = true;
+      m.clockInTime = now;
+      showStatus(`${m.name} Clocked in at ${fmt}`, true);
+    } else {
+      m.clockedIn = false;
+      if (!m.clockInTime) {
+        showStatus("Error: no clock-in time", false);
+        return;
+      }
+      const secs = Math.round((now - m.clockInTime)/1000);
+      const hrs  = secs/3600;
+      const earned = Math.round(hrs * m.hourlyRate *100)/100;
+      showStatus(
+        `${m.name} Clocked out at ${fmt}. ` +
+        `Worked ${secs}s, Earned $${earned}`,
+        true
+      );
+      sendEmailUsingEmailJS(
+        m.name,
+        formatDate(m.clockInTime),
+        fmt,
+        secs,
+        m.hourlyRate,
+        earned
+      );
+      m.clockInTime = null;
+    }
+    updateLocalStorage();
   });
 }
 
 // =======================
-// BACKGROUND VIDEO & CURVED TITLE FUNCTIONS
+// VIDEO & CURVED TITLE
 // =======================
 
 function initializeBackgroundVideo() {
-  let video = document.createElement("video");
-  video.src = "background.mp4"; // Ensure the video file is in the correct location.
-  video.autoplay = true;
-  video.loop = true;
-  video.muted = true;
-  video.setAttribute("playsinline", "true");
-  video.style.position = "absolute";
-  video.style.top = "0";
-  video.style.left = "0";
-  video.style.width = "100vw";
-  video.style.height = "100vh";
-  video.style.objectFit = "cover";
-  video.style.zIndex = "-1";
-  document.body.prepend(video);
+  const v = document.createElement("video");
+  v.src = "background.mp4";
+  v.autoplay = v.loop = v.muted = true;
+  v.style = `
+    position:absolute;top:0;left:0;
+    width:100vw;height:100vh;
+    object-fit:cover;z-index:-1;
+  `;
+  document.body.prepend(v);
 }
 
 function createCurvedTitle() {
   const title = "QUARTZ";
-  const lettersGroup = document.getElementById("letters");
-  const path = document.getElementById("curve");
-  if (!lettersGroup || !path) return;
-  const pathLength = path.getTotalLength();
-  const spacing = pathLength / (title.length + 1);
-  for (let i = 0; i < title.length; i++) {
-    const offset = spacing * (i + 1);
-    const point = path.getPointAtLength(offset);
-    const nextPoint = path.getPointAtLength(offset + 1);
-    const angle = Math.atan2(nextPoint.y - point.y, nextPoint.x - point.x) * (180 / Math.PI);
-    const letterElem = document.createElementNS("http://www.w3.org/2000/svg", "text");
-    letterElem.setAttribute("x", point.x);
-    letterElem.setAttribute("y", point.y);
-    letterElem.setAttribute("font-size", "5em");
-    letterElem.setAttribute("font-family", "Poppins");
-    letterElem.setAttribute("fill", "white");
-    letterElem.setAttribute("text-anchor", "middle");
-    letterElem.textContent = title[i];
-    letterElem.style.setProperty("--i", i);
-    letterElem.classList.add("letter");
-    letterElem.style.cursor = "pointer";
-    letterElem.setAttribute("transform", `rotate(${angle}, ${point.x}, ${point.y})`);
-    letterElem.addEventListener("mouseenter", function () {
-      const allLetters = document.querySelectorAll("#letters text");
-      allLetters.forEach(letter => {
-        letter.classList.add("wave");
-        letter.addEventListener("animationend", () => {
-          letter.classList.remove("wave");
-        }, { once: true });
+  const grp = document.getElementById("letters");
+  const path= document.getElementById("curve");
+  if (!grp||!path) return;
+  const L = path.getTotalLength();
+  const spacing = L/(title.length+1);
+  for (let i=0; i<title.length; i++) {
+    const off = spacing*(i+1);
+    const p   = path.getPointAtLength(off);
+    const np  = path.getPointAtLength(off+1);
+    const ang = Math.atan2(np.y-p.y,np.x-p.x)*(180/Math.PI);
+    const txt = document.createElementNS("http://www.w3.org/2000/svg","text");
+    txt.setAttribute("x",p.x);
+    txt.setAttribute("y",p.y);
+    txt.setAttribute("font-size","5em");
+    txt.setAttribute("font-family","Poppins");
+    txt.setAttribute("fill","white");
+    txt.setAttribute("text-anchor","middle");
+    txt.textContent = title[i];
+    txt.setAttribute("transform",`rotate(${ang},${p.x},${p.y})`);
+    txt.classList.add("letter");
+    txt.addEventListener("mouseenter", () => {
+      document.querySelectorAll("#letters text").forEach(l => {
+        l.classList.add("wave");
+        l.addEventListener("animationend", ()=>l.classList.remove("wave"),{once:true});
       });
     });
-    lettersGroup.appendChild(letterElem);
+    grp.appendChild(txt);
   }
 }
 
-document.getElementById("open-schedule").addEventListener("click", function (e) {
-  e.preventDefault();
-
-  openKeypad((passkey) => {
-    const operatorCode = "2019"; // your master schedule editor password
-
-    if (passkey === operatorCode) {
-  localStorage.setItem("userRole", "operator");
-  localStorage.setItem("userName", "Operator");
-  showLoginSplash("Operator");
-} else if (members[passkey]) {
-  const member = members[passkey];
-  localStorage.setItem("userRole", "employee");
-  localStorage.setItem("userName", member.name);
-  showLoginSplash(member.name);
-} else {
-  showStatus("❌ Invalid passkey.", false);
-}
-
-  });
-});
-
-
-
-
 // =======================
-// INITIALIZATION ON PAGE LOAD
+// BOOTSTRAP ON LOAD
 // =======================
 
-window.onload = function() {
+document.addEventListener("DOMContentLoaded", () => {
+  // 1) storage
   loadLocalStorage();
+  // 2) keypad
+  setupKeypad();
+  // 3) video + title
   initializeBackgroundVideo();
   createCurvedTitle();
-  setupKeypad();
-};
+  // 4) hook schedule button
+  document.getElementById("open-schedule")
+          .addEventListener("click", () => authenticate("schedule"));
+});

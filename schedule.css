@@ -1,34 +1,15 @@
-/* Example: */
 body {
-  background: #eeeeee;
-  font-family: 'Montserrat', sans-serif;
+  margin: 0;
+  padding: 0;
+  font-family: sans-serif;
+  background-color: #f5f5f5;
 }
 
 #calendar {
+  max-width: 900px;
+  margin: 3rem auto;
   background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-  margin: 20px auto;
-  padding: 10px;
-}
-
-
-/* A subtle fade-in effect for the calendar container: */
-#calendar {
-  opacity: 0;
-  transition: opacity 0.5s ease-in;
-}
-#calendar.loaded {
-  opacity: 1;
-}
-
-@media (max-width: 600px) {
-  #calendar {
-    width: 95%;
-    height: 80vh;
-  }
-  #view-buttons button {
-    font-size: 0.9rem;
-    padding: 0.4rem 0.8rem;
-  }
+  border-radius: 6px;
+  padding: 1rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
